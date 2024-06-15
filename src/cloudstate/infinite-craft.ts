@@ -1,4 +1,4 @@
-import { cloudstate, useCloud, type CloudState } from "freestyle-sh";
+import { cloudstate, useCloud, useLocal, type CloudState } from "freestyle-sh";
 import { EmojiNoun, EmojiNounRes } from "./emoji-noun";
 import { getFirstEmoji } from "../helpers/emoji-strings";
 
@@ -75,7 +75,6 @@ export class RoomCS {
 		return this.name;
 	}
 	
-	globalCache = useCloud<typeof GlobalCacheCS>("global-cache");
 	setAnthropicApiKey(apiKey: string) {
 		process.env.ANTHROPIC_API_KEY = apiKey;
 	}
@@ -90,13 +89,14 @@ export class RoomCS {
 	}
 	async craftNoun(a: EmojiNoun, b: EmojiNoun): Promise<EmojiNounRes> {
 		const roomNouns: EmojiNoun[] = this.getNouns();
+		const cache = useLocal(GlobalCacheCS);
 
 		const comboKey = EmojiNoun.createKey(a, b);
-		if (await this.globalCache.has(comboKey)) {
+		if (await cache.has(comboKey)) {
 			console.log('|cloud> Combo is already in global cache:', comboKey)
 			
 			// Noun from combination is already in global cache
-			const globalNoun = await this.globalCache.get(comboKey);
+			const globalNoun = await useLocal(GlobalCacheCS).get(comboKey);
 			return {
 				...globalNoun,
 				isNewToRoom: !roomNouns.some(noun => noun.text === globalNoun.text),
@@ -120,7 +120,7 @@ export class RoomCS {
 		}
 
 		// Add noun to global cache
-		this.globalCache.set(comboKey, comboResult);
+		cache.set(comboKey, comboResult);
 		
 		// Return the response payload
 		return {...comboResult, isNewToRoom: isNewToRoom};
