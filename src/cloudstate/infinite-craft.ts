@@ -96,7 +96,7 @@ export class RoomCS {
 			console.log('|cloud> Combo is already in global cache:', comboKey)
 			
 			// Noun from combination is already in global cache
-			const globalNoun = await useLocal(GlobalCacheCS).get(comboKey);
+			const globalNoun = await cache.get(comboKey);
 			return {
 				...globalNoun,
 				isNewToRoom: !roomNouns.some(noun => noun.text === globalNoun.text),
